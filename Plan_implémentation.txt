@@ -1,0 +1,130 @@
+# Plan d'implementation revise - Gestion Stock Vision
+
+## Objectif du prototype
+
+Construire une chaine de demonstration pour une pharmacie ou un stock medical:
+
+1. recevoir une demande d'article;
+2. verifier le stock;
+3. selectionner l'image associee au produit;
+4. simuler le deplacement du robot vers le bon rayon;
+5. preparer le branchement futur avec la vision par ordinateur et l'automatisation.
+
+Le travail demande pour cette part d'equipe concerne l'etape 1: modules 1 et 2.
+
+## Etape 1 - Modules 1 et 2: implementee
+
+### Module 1: gestion de stock
+
+Fichiers crees:
+
+- `data/inventory.csv`: inventaire initial de 8 articles, utilise comme graine.
+- `data/pharmacy.sqlite`: base active creee automatiquement au premier lancement.
+- `app.py`: lecture SQLite, recherche par ID ou nom, controle de quantite, messages d'erreur, confirmation de delivrance.
+- `web_app.py`: interface Flask pour le poste pharmacien.
+- `templates/index.html` et `static/styles.css`: design web de la demo.
+- `tests/test_stock_simulation.py`: tests des scenarios principaux.
+
+Attributs suivis pour chaque article:
+
+- `id_unique`
+- `nom`
+- `classe_therapeutique`
+- `emplacement_rayon`
+- `quantite_stock`
+- `prix`
+- `image_path`
+
+Scenarios deja couverts:
+
+- article trouve par ID;
+- article trouve par nom partiel unique;
+- article introuvable;
+- quantite invalide;
+- stock insuffisant;
+- image associee manquante.
+- delivrance confirmee avec decrementation du stock SQLite;
+- transaction journalisee dans la table `transactions`.
+
+### Module 2: selection et simulation d'image
+
+Fichiers crees:
+
+- `images/*.svg`: images simulees pour chaque article.
+- la colonne `image_path` de SQLite associe chaque article a son image.
+
+Comportement actuel:
+
+- si l'article existe et que le stock suffit, le programme affiche l'image selectionnee;
+- il simule le mouvement avec le message:
+  `Robot allant au compartiment: {emplacement_rayon}`;
+- il demande une confirmation explicite avant de decrementer le stock;
+- chaque modification affiche une confirmation visible dans l'interface.
+
+Commandes utiles:
+
+```powershell
+python -m pip install -r requirements.txt
+python web_app.py
+python app.py --list
+python app.py --query MED-001 --quantity 2
+python app.py --query MED-001 --quantity 2 --confirm
+python app.py --query amoxicilline
+python -m unittest discover -s tests
+```
+
+### Interface web retenue
+
+Flask est retenu pour la version locale:
+
+- tableau de bord: indicateurs stock, valeur et alertes;
+- panneau vente: demande client, quantite, simulation et vente;
+- panneau ajustement: ajout ou retrait de stock avec validation;
+- inventaire: cartes produit avec prix, rayon, image et stock;
+- zone assistant: brouillon de contexte LLM pour assister le pharmacien;
+- transactions recentes: historique issu de SQLite.
+
+Le LLM ne doit pas delivrer automatiquement un medicament. Il doit aider a
+poser des questions de clarification, resumer les symptomes et laisser la
+validation au pharmacien.
+
+## Etape 2 - Vision par ordinateur: ajustement important
+
+Le plan initial disait que `yolo11n.pt` etait pret pour detecter des pilules. C'est a corriger: les poids YOLO11 fournis par Ultralytics sont principalement des modeles generiques preentraines sur COCO pour la detection, et COCO ne correspond pas a un jeu de classes medicales dedie aux comprimes.
+
+Plan recommande pour la suite:
+
+1. garder `app.py` comme point d'entree du flux stock -> image;
+2. remplacer le placeholder `process_image(image_path)` dans `vision.py`;
+3. utiliser soit un modele de detection entraine sur des images de medicaments, soit un petit dataset annote pour fine-tuner un modele YOLO;
+4. retourner un verdict simple:
+   - `VISION_OK`: pilule detectee;
+   - `VISION_KO`: pilule non detectee ou image invalide;
+5. conserver la confirmation pharmacien et ne rendre la delivrance automatique
+   qu'apres un verdict vision fiable.
+
+## Etape 3 - Automatisation
+
+Deja amorce:
+
+- decrementer le stock dans `data/pharmacy.sqlite`;
+- journaliser les transactions dans la table `transactions`.
+
+A completer apres validation de la vision:
+
+- generer des instructions de livraison;
+- conserver les erreurs dans un fichier de logs pour la demonstration.
+
+## Etape 4 - Interface, LLM et demo
+
+Flask est maintenant l'interface principale de demonstration: inventaire
+visible, formulaire de demande, image selectionnee, statut vision, ajustement
+du stock, transactions SQLite et brouillon LLM.
+
+## Priorites immediates
+
+1. Valider l'interface Flask harmonisee.
+2. Brancher d'abord la vision dans `vision.py`.
+3. Remplacer les images SVG simulees par de vraies photos libres ou par un mini-dataset annote.
+4. Choisir le modele de vision et verifier ses classes.
+5. Relier la confirmation de delivrance au verdict vision quand celui-ci sera fiable.

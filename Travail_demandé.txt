@@ -1,0 +1,41 @@
+Track 1: AI Agents & Agentic Workflows (Best Track for Beginners)
+
+
+• Objective: Move beyond simple RAG to build sophisticated AI agentic systems and workloads.
+
+• What to Build: Build intelligent AI systems that automate workflows, coordinate agents, or assist users in complex tasks.
+• Tech Stack: Utilize frameworks like LangChain, CrewAI, or AutoGen connecting to open-source models (Llama, DeepSeek, Mistral, Qwen).
+• Compute Resource: $100 in AMD Developer Cloud credits.
+
+⚡ Track 2: Fine-Tuning on AMD GPUs (Advanced / GPU-Intensive)
+
+
+• Objective: Leverage direct GPU access to fine-tune open-source models for high-impact domain specialization.
+
+• What to Build: Domain-specific LLMs (Healthcare, Finance, Legal, or Code) fine-tuned for accuracy and efficiency on ROCm.
+• Tech Stack: ROCm, PyTorch, Hugging Face Optimum-AMD, and vLLM for serving.
+• Compute Resource: Access to AMD Instinct MI300X instances via AMD Developer Cloud.
+
+🎨 Track 3: Vision & Multimodal AI
+
+
+
+• Objective: Build applications that process and understand multiple data types (Images, Video, Audio) using the massive memory bandwidth of AMD GPUs.
+
+• What to Build: High-throughput industrial inspection, medical imaging analysis, or multimodal conversational assistants.
+• Tech Stack: Multimodal models (like Llama 3.2 Vision, Qwen-VL) optimized for ROCm™.
+• Compute Resource: Access to AMD Instinct MI300X instances via AMD Developer Cloud.
+
+🚢 Extra Challenge: Ship It + Build in Public
+
+
+• Objective: Document your building journey, share insights, and provide feedback on the AMD developer experience.
+
+• Requirements:
+1. Share at least 2 technical updates on social media (tag @lablab on X or lablab.ai on LinkedIn, and tag @AIatAMD on X or AMD Developer on LinkedIn)
+2. Provide meaningful feedback about building with ROCm, AMD Developer Cloud, or APIs.
+3. Open-source your project or publish a technical walkthrough of how you built it.
+Reward: A dedicated prize pool for the best Build in Public stories and the most valuable product feedback.
+
+
+This challenge can be completed alongside any hackathon track.

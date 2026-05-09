@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PharmaStock Vision</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark">PV</span>
+      <div>
+        <strong>PharmaStock</strong>
+        <small>SQLite live</small>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <a href="#vente">Vente</a>
+      <a href="#inventaire">Inventaire</a>
+      <a href="#ajustement">Ajustement</a>
+      <a href="#assistant">Assistant</a>
+    </nav>
+
+    <section class="sidebar-summary">
+      <span>Stock total</span>
+      <strong>{{ total_stock }}</strong>
+      <span>Valeur estimée</span>
+      <strong>{{ stock_value }}</strong>
+    </section>
+  </aside>
+
+  <main class="shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Poste pharmacien</p>
+        <h1>Vente, stock et contrôle vision</h1>
+      </div>
+      <div class="status-pill">
+        <span></span>
+        data/pharmacy.sqlite
+      </div>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="alerts">
+          {% for category, message in messages %}
+            <div class="alert {{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <section class="metrics">
+      <article>
+        <span>Articles</span>
+        <strong>{{ inventory|length }}</strong>
+      </article>
+      <article>
+        <span>Unités en stock</span>
+        <strong>{{ total_stock }}</strong>
+      </article>
+      <article>
+        <span>Stocks faibles</span>
+        <strong>{{ low_stock_count }}</strong>
+      </article>
+      <article>
+        <span>Valeur</span>
+        <strong>{{ stock_value }}</strong>
+      </article>
+    </section>
+
+    <section class="work-grid">
+      <article class="panel" id="vente">
+        <div class="panel-title">
+          <div>
+            <p class="eyebrow">Vente</p>
+            <h2>Demande client</h2>
+          </div>
+        </div>
+
+        <form class="form-grid" method="post">
+          <label>
+            Article
+            <select name="query">
+              {% for article in inventory %}
+                <option value="{{ article.id_unique }}" {% if form_query == article.id_unique %}selected{% endif %}>
+                  {{ article.id_unique }} - {{ article.nom }} · stock {{ article.quantite_stock }}
+                </option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>
+            Quantité
+            <input type="number" name="quantity" min="1" value="{{ form_quantity or 1 }}">
+          </label>
+          <div class="button-row">
+            <button class="secondary" formaction="{{ url_for('select_article') }}">Simuler</button>
+            <button class="success" formaction="{{ url_for('sell_article') }}">Vendre</button>
+          </div>
+        </form>
+
+        {% if selection_messages %}
+          <div class="result-box">
+            {% for message in selection_messages %}
+              <p>{{ message }}</p>
+            {% endfor %}
+            {% if vision_message %}
+              <p><strong>Vision:</strong> {{ vision_message }}</p>
+            {% endif %}
+          </div>
+        {% endif %}
+      </article>
+
+      <article class="panel" id="ajustement">
+        <div class="panel-title">
+          <div>
+            <p class="eyebrow">Stock</p>
+            <h2>Ajuster un article</h2>
+          </div>
+        </div>
+
+        <form class="form-grid" method="post" action="{{ url_for('adjust_article_stock') }}">
+          <label>
+            Article
+            <select name="adjust_query">
+              {% for article in inventory %}
+                <option value="{{ article.id_unique }}">{{ article.id_unique }} - {{ article.nom }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>
+            Quantité
+            <input type="number" name="adjust_quantity" min="1" value="1">
+          </label>
+          <div class="segmented">
+            <label><input type="radio" name="operation" value="ajouter" checked> Ajouter</label>
+            <label><input type="radio" name="operation" value="retirer"> Retirer</label>
+          </div>
+          <button class="primary">Valider l'ajustement</button>
+        </form>
+      </article>
+    </section>
+
+    <section class="panel" id="inventaire">
+      <div class="panel-title">
+        <div>
+          <p class="eyebrow">Catalogue</p>
+          <h2>Inventaire disponible</h2>
+        </div>
+      </div>
+
+      <div class="inventory-grid">
+        {% for article in inventory %}
+          <article class="product-card">
+            <div class="product-image">
+              <img src="{{ url_for('product_image', filename=article.image_path.name) }}" alt="{{ article.nom }}">
+            </div>
+            <div class="product-body">
+              <div>
+                <span class="code">{{ article.id_unique }}</span>
+                <h3>{{ article.nom }}</h3>
+              </div>
+              <p>{{ article.classe_therapeutique }} · {{ article.emplacement_rayon }}</p>
+              <div class="product-footer">
+                <strong>{{ article.prix_formate }}</strong>
+                <span class="{% if article.quantite_stock <= 20 %}low{% else %}ok{% endif %}">
+                  stock {{ article.quantite_stock }}
+                </span>
+              </div>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="work-grid lower">
+      <article class="panel" id="assistant">
+        <div class="panel-title">
+          <div>
+            <p class="eyebrow">LLM futur</p>
+            <h2>Assistant pharmacien</h2>
+          </div>
+        </div>
+        <form method="post" action="{{ url_for('prepare_assistant_context') }}">
+          <textarea name="symptoms" rows="6" placeholder="Décrire les symptômes du client">{{ symptoms or "" }}</textarea>
+          <button class="primary">Préparer le contexte</button>
+        </form>
+        {% if llm_context %}
+          <pre class="llm-output">{{ llm_context }}</pre>
+        {% endif %}
+      </article>
+
+      <article class="panel">
+        <div class="panel-title">
+          <div>
+            <p class="eyebrow">SQLite</p>
+            <h2>Transactions récentes</h2>
+          </div>
+        </div>
+        <div class="timeline">
+          {% for transaction in transactions %}
+            <div class="timeline-item">
+              <span>{{ transaction.created_at }}</span>
+              <strong>{{ transaction.action }} · {{ transaction.status }}</strong>
+              <p>{{ transaction.message }}</p>
+            </div>
+          {% else %}
+            <p class="empty">Aucune transaction enregistrée.</p>
+          {% endfor %}
+        </div>
+      </article>
+    </section>
+  </main>
+</body>
+</html>
